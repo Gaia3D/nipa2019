@@ -1,0 +1,98 @@
+package hmd.domain;
+
+public class Search {
+
+	// 총건수
+	private Long totalCount;
+	
+	// 페이지 처리를 위한 시작
+	private Long offset;
+	// 페이지별 표시할 건수
+	private Long limit;
+	
+	/********** 검색 조건 ************/
+	private String searchWord;
+	// 검색 옵션. 0 : 일치, 1 : 포함
+	private String searchOption;
+	private String searchValue;
+	private String startDate;
+	private String endDate;
+	private String orderWord;
+	private String orderValue;
+	private Long listCounter = 10l;
+	
+	public Long getTotalCount() {
+		return totalCount;
+	}
+	public void setTotalCount(Long totalCount) {
+		this.totalCount = totalCount;
+	}
+	public Long getOffset() {
+		return offset;
+	}
+	public void setOffset(Long offset) {
+		this.offset = offset;
+	}
+	public Long getLimit() {
+		return limit;
+	}
+	public void setLimit(Long limit) {
+		this.limit = limit;
+	}
+	public String getSearchWord() {
+		return searchWord;
+	}
+	public void setSearchWord(String searchWord) {
+		this.searchWord = searchWord;
+	}
+	public String getSearchOption() {
+		return searchOption;
+	}
+	public void setSearchOption(String searchOption) {
+		this.searchOption = searchOption;
+	}
+	public String getSearchValue() {
+		return searchValue;
+	}
+	public void setSearchValue(String searchValue) {
+		this.searchValue = searchValue;
+	}
+	public String getStartDate() {
+		return startDate;
+	}
+	public void setStartDate(String startDate) {
+		this.startDate = startDate;
+	}
+	public String getEndDate() {
+		return endDate;
+	}
+	public void setEndDate(String endDate) {
+		this.endDate = endDate;
+	}
+	public String getOrderWord() {
+		return orderWord;
+	}
+	public void setOrderWord(String orderWord) {
+		this.orderWord = orderWord;
+	}
+	public String getOrderValue() {
+		return orderValue;
+	}
+	public void setOrderValue(String orderValue) {
+		this.orderValue = orderValue;
+	}
+	public Long getListCounter() {
+		return listCounter;
+	}
+	public void setListCounter(Long listCounter) {
+		this.listCounter = listCounter;
+	}
+	
+	@Override
+	public String toString() {
+		return "Search [totalCount=" + totalCount + ", offset=" + offset + ", limit=" + limit + ", searchWord="
+				+ searchWord + ", searchOption=" + searchOption + ", searchValue=" + searchValue + ", startDate="
+				+ startDate + ", endDate=" + endDate + ", orderWord=" + orderWord + ", orderValue=" + orderValue
+				+ ", listCounter=" + listCounter + "]";
+	}
+}

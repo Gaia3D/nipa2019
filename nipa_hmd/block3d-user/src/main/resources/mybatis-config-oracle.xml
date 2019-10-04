@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration
+    PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-config.dtd">
+
+<configuration>
+    <settings>
+        <setting name="lazyLoadingEnabled" value="false" />
+        <setting name="mapUnderscoreToCamelCase" value="true"/>
+    </settings>
+
+    <typeAliases>
+    	<typeAlias type="hmd.domain.UserInfo" alias="userInfo"/>
+    	<typeAlias type="hmd.domain.UserSession" alias="userSession"/>
+        <typeAlias type="hmd.domain.Block" alias="block"/>
+        <typeAlias type="hmd.domain.BlockStyle" alias="blockStyle"/>
+        <typeAlias type="hmd.domain.Ship" alias="ship"/>
+        <typeAlias type="hmd.domain.ShipInfo" alias="shipInfo"/>
+        <typeAlias type="hmd.domain.TP" alias="tp"/>
+        <typeAlias type="hmd.domain.MaterialDelivery" alias="materialDelivery"/>
+    </typeAliases>
+
+</configuration>

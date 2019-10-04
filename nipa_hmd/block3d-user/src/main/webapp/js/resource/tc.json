@@ -1,0 +1,34 @@
+{  
+   "attributes":{  
+      "isPhysical":false,
+      "nodeType":"root",
+      "projectType":"tc",
+      "specularLighting":true
+   },
+   "children":[  
+      {  
+         "attributes":{  
+            "isPhysical":true,
+            "nodeType":"tc"
+         },
+         "children":[  
+
+         ],
+         "data_key":"TC010026_r1",
+         "data_name":"TC010026_r1",
+         "mapping_type":"boundingboxbottomcenter",
+         "latitude":35.509269518343665,
+         "longitude":129.4017926248845,
+         "height":0,
+         "heading":0,
+         "pitch":0,
+         "roll":0
+      }
+   ],
+   "parent":0,
+   "depth":1,
+   "view_order":2,
+   "data_key":"tc",
+   "data_name":"tc",
+   "mapping_type":"origin"
+}

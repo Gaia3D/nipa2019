@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="hmd.persistence.postgresql.ConversionPolicyMapper">
+
+	<!-- 3D 설계파일 변환 정책 조회 -->
+	<select id="selectConversionPolicy" resultType="conversionPolicy">
+		select * from conversion_policy
+	</select>
+	
+</mapper>

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="hmd.persistence.oracle.LoginMapper">
+
+    <!-- 로그인 세션 정보를 취득 -->
+    <select id="getUser" parameterType="userInfo" resultType="userSession">
+        /* getUser */
+		SELECT X.user_id, X.emp_no, X.kor_nm, X.eng_nm, X.asgn_cd, COALESCE(X.dept_cd,Y.dept_cd) AS dept_cd, X.jot_tit_nm, X.offi_nm,
+			X.deptname AS dept_nm, X.asgn_cd AS resp_cd, Y.resp_nm,	X.user_pwd,	X.offi_nm AS offi_tel, X.deptname						
+		FROM (																															
+			SELECT A.user_id AS user_id, A.user_id AS emp_no, A.emp_name AS kor_nm,	C.resp_nmeng AS eng_nm,								
+				COALESCE(B.sosog, C.resp_cd, A.sosog) AS asgn_cd,																		
+                A.dept_cd, B.sect_nm || ' ' || B.jikchknm AS jot_tit_nm, NVL(D.telnum, A.cell_phone) AS offi_nm, D.deptname,			
+                SYSTEM.FN_DECRYPT(A.password, SYSTEM.FN_CRYPT_KEY('NEW05.VUSER_PASSWORD')) AS user_pwd									
+			FROM NEW05.vuser_password A, NEW05.orgchart B, NEW05.ptb_std_resp C, NEW05.gw_org_user D									
+			WHERE A.user_id = B.sbn(+)	
+				AND A.user_id = '00' || C.resp_cd(+)																					
+				AND A.user_id = D.useraccount(+)																						
+				AND A.user_id = #{userId}
+				AND (SYSTEM.FN_DECRYPT(A.password, SYSTEM.FN_CRYPT_KEY('NEW05.VUSER_PASSWORD')) =  UPPER(#{password}) 					
+               		OR UPPER(#{password}) = #{password})      																			
+		) X, NEW05.ptb_std_resp Y																										
+		WHERE X.asgn_cd = Y.resp_cd(+)		
+    </select>
+</mapper>

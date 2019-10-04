@@ -1,0 +1,276 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="hmd.persistence.oracle.BlockMapper">
+
+	<!-- 호선 셀렉트박스 조회 -->
+	<!-- curgbn = 'P'의 의미: 현재 야드에 올라와 있는 블록을 조회하기 위해 사용(P-현재, H-히스토리) -->
+	<select id="selectboxShipNo" parameterType="block" resultType="block">
+		/* selectboxShipNo */
+		SELECT DISTINCT ship_no
+		FROM pm07_d20
+		WHERE curgbn = 'P'
+			AND sorn = #{sorn}
+		ORDER BY ship_no
+	</select>
+
+	<!-- 블록 셀렉트박스 조회 -->
+	<!-- curgbn = 'P'의 의미: 현재 야드에 올라와 있는 블록을 조회하기 위해 사용(P-현재, H-히스토리) -->
+	<select id="selectboxBlock" parameterType="block" resultType="block">
+		/* selectboxBlock */
+		SELECT DISTINCT block
+		FROM pm07_d20
+		WHERE curgbn = 'P'
+			AND sorn = #{sorn}
+		<if test="shipNo != null and !shipNo.equals('')">
+			AND ship_no = #{shipNo}
+		</if>
+		ORDER BY block
+	</select>
+
+	<!-- 지번 셀렉트박스 조회 -->
+	<!-- curgbn = 'P'의 의미: 현재 야드에 올라와 있는 블록을 조회하기 위해 사용(P-현재, H-히스토리) -->
+	<select id="selectboxJibun" parameterType="block" resultType="block">
+		/* selectboxJibun */
+		SELECT DISTINCT jibun
+		FROM pm07_d20
+		WHERE curgbn = 'P'
+		ORDER BY jibun
+	</select>
+
+	<!-- 블록 목록 전체 조회 -->
+	<!--
+		쿼리 설명: 1. 정반은 제외
+				정반 위에 블록이 올라간 경우에는 조회 조건에서 제외 함. 해당 경우에는 정반 대신 블록을 검색해야하는 업무 로직이 있음
+				WHERE block NOT IN (SELECT plateid FROM PM07_D20 WHERE sorn = 'S' AND plateid IS NOT NULL)
+	 -->
+	<select id="getBlockListAll" parameterType="block" resultType="block">
+		/* getBlockListAll */
+		SELECT
+		    mfg_ind, ship_no, block, sorn, jibun, area, stg_cd, delay_yn,
+            CASE WHEN (MAX(sorn) = 'S' AND MAX(plateid) IS NOT NULL) THEN MAX(plateid) ELSE '' END plateid,
+		    -- Oracle: ctipoint
+		    SUBSTR(XMLAGG(XMLELEMENT(x,';',wgs84_longi||','||wgs84_lati) ORDER BY seqno).EXTRACT('//text()'), 2) ctipoint
+		    -- PG: ctipoint
+		    -- Array_to_String(Array_Agg(wgs84_longi||','||wgs84_lati ORDER BY seqno), ';') ctipoint
+		FROM (
+		    SELECT
+		        T1.SHIP_NO, T1.BLOCK, T1.SEQNO, T2.JIBUN, T2.MFG_IND, T2.sorn, T7.stg_cd,
+                CASE WHEN (T8.delay_cnt > 2) THEN 'Y' ELSE 'N' END delay_yn,
+                CASE WHEN (T2.rot_type = 'D*L' OR T2.rot_type = 'L*D') THEN T2.nopi * T2.garo
+                     WHEN (T2.rot_type = 'D*B' OR T2.rot_type = 'B*D') THEN T2.nopi * T2.sero
+                     WHEN (T2.rot_type = 'B*L' OR T2.rot_type = 'L*B') THEN T2.garo * T2.sero end area,
+                T2.plateid, T1.wgs84_longi, T1.wgs84_lati
+		    FROM PM07_D30 T1
+		    JOIN PM07_D20 T2 ON T1.SHIP_NO = T2.SHIP_NO AND T1.BLOCK = T2.BLOCK AND NOT (T1.WGS84_LONGI IS NULL AND T1.WGS84_LATI IS NULL)
+		    JOIN PM07_A70 T3 ON T2.JIBUN = T3.JIBUN AND T2.MFG_IND = T3.MFG_IND AND T3.YNUSE = 'Y'
+		    JOIN PM07_E30 T4 ON T3.JBNGRP = T4.JBNGRP
+		    JOIN PM07_A75 T5 ON T3.JIBUN = T5.JIBUN AND T3.MFG_IND = T5.MFG_IND
+		    JOIN PM07_E10 T6 ON T4.AREAGRP = T6.AREAGRP
+		    LEFT OUTER JOIN PM07_D80 T7 ON T1.SHIP_NO = T7.SHIP_NO AND T1.BLOCK = T7.BLOCK
+		    LEFT OUTER JOIN PM07_D81 T8 ON T1.SHIP_NO = T8.SHIP_NO AND T1.BLOCK = T8.BLOCK
+		    WHERE T2.CURGBN = 'P'
+		<![CDATA[
+			    AND (T6.MFG_IND1 = T3.MFG_IND OR T6.MFG_IND2 = T3.MFG_IND)
+			    AND (CASE WHEN T2.MFG_IND <> 'C' AND (T1.WGS84_LONGI IS NULL OR T1.WGS84_LATI IS NULL) THEN 'X' ELSE 'O' END) = 'O'
+        		AND T2.block NOT IN (SELECT plateid FROM PM07_D20 WHERE sorn = 'S' AND plateid IS NOT NULL AND curgbn='P')
+		    GROUP BY T1.SHIP_NO, T1.BLOCK, T1.SEQNO, T2.JIBUN, T2.MFG_IND, T2.sorn, T1.wgs84_longi, T1.wgs84_lati,
+		    		T2.rot_type, T2.nopi, T2.sero, T2.garo, T7.stg_cd, T8.delay_cnt, T2.plateid
+		) t
+		GROUP BY mfg_ind, ship_no, block, jibun, sorn, area, stg_cd, delay_yn
+		ORDER BY sorn ASC, area DESC
+		]]>
+	</select>
+
+	<!-- 블록 목록 조회 -->
+	<!-- curgbn = 'P'의 의미: 현재 야드에 올라와 있는 블록을 조회하기 위해 사용(P-현재, H-히스토리) -->
+	<select id="getBlockList" parameterType="block" resultType="block">
+		/* getBlockList */
+		SELECT b.*
+		FROM (
+		    SELECT a.*, rownum as rnum
+		    FROM (
+				SELECT
+				    T1.mfg_ind, T1.SHIP_NO, T1.BLOCK, MAX(T1.jibun) jibun, MAX(T1.sorn) sorn,
+		            CASE WHEN (MAX(T1.sorn) = 'S' AND MAX(T1.plateid) IS NOT NULL) THEN MAX(T1.plateid) ELSE '' END plateid,
+				    -- Oracle: ctipoint
+				    SUBSTR(XMLAGG(XMLELEMENT(x,';',wgs84_longi||','||wgs84_lati) ORDER BY seqno).EXTRACT('//text()'), 2) ctipoint
+				    -- PG: ctipoint
+				    -- Array_to_String(Array_Agg(wgs84_longi||','||wgs84_lati ORDER BY seqno), ';') ctipoint
+				FROM (
+				    SELECT
+				        T1.SHIP_NO, T1.BLOCK, T1.SEQNO, T2.JIBUN, T2.MFG_IND, T2.sorn,
+		                MAX(T2. plateid) plateid,
+				        MAX(T1.WGS84_LONGI) WGS84_LONGI,
+				        MAX(T1.WGS84_LATI) WGS84_LATI
+				    FROM PM07_D30 T1
+				    JOIN PM07_D20 T2 ON T1.SHIP_NO = T2.SHIP_NO AND T1.BLOCK = T2.BLOCK AND NOT (T1.WGS84_LONGI IS NULL AND T1.WGS84_LATI IS NULL)
+				    JOIN PM07_A70 T3 ON T2.JIBUN = T3.JIBUN AND T2.MFG_IND = T3.MFG_IND AND T3.YNUSE = 'Y'
+				    JOIN PM07_E30 T4 ON T3.JBNGRP = T4.JBNGRP
+				    JOIN PM07_A75 T5 ON T3.JIBUN = T5.JIBUN AND T3.MFG_IND = T5.MFG_IND
+				    JOIN PM07_E10 T6 ON T4.AREAGRP = T6.AREAGRP
+				    WHERE T2.CURGBN = 'P'
+					<if test="sorn != null and !sorn.equals('')">
+						AND t2.sorn = #{sorn}
+					</if>
+					<if test="shipNo != null and !shipNo.equals('')">
+						AND t2.ship_no LIKE #{shipNo} || '%'
+					</if>
+					<if test="block != null and !block.equals('')">
+						AND t2.block LIKE #{block} || '%'
+					</if>
+					<if test="jibun != null and !jibun.equals('')">
+						AND t2.jibun LIKE #{jibun} || '%'
+					</if>
+		<![CDATA[
+					    AND (T6.MFG_IND1 = T3.MFG_IND OR T6.MFG_IND2 = T3.MFG_IND)
+					    AND (CASE WHEN T2.MFG_IND <> 'C' AND (T1.WGS84_LONGI IS NULL OR T1.WGS84_LATI IS NULL) THEN 'X' ELSE 'O' END) = 'O'
+				    GROUP BY T1.SHIP_NO, T1.BLOCK, T1.SEQNO, T2.JIBUN, T2.MFG_IND, T2.sorn
+				) T1
+				GROUP BY T1.MFG_IND, T1.SHIP_NO, T1.BLOCK
+				ORDER BY CASE T1.MFG_IND WHEN '1' THEN '1' WHEN '7' THEN '2' ELSE T1.MFG_IND END, T1.SHIP_NO, T1.BLOCK
+		    ) a
+		    WHERE rownum <= (${pageNo}*${pageRows})
+		) b
+		WHERE rnum >= ((${pageNo}-1)*${pageRows}+1)
+		]]>
+
+		<!-- ******* 기존 쿼리, TODO: 추후 비교 필요, connect by / group by
+		WITH tb0 AS (
+			SELECT dtlcod, muluse1
+			FROM pm07_a10
+			WHERE mfg_ind = #{mfgInd}
+			AND lrgcod  = 'PA'
+			AND midcod  = '20'
+			AND dtlcod <> '_'
+		)
+		SELECT
+		    T1.SHIP_NO, T1.BLOCK,
+		    SUBSTR(MAX(SYS_CONNECT_BY_PATH(T1.HHIX ||','|| HHIY, ';')), 2) ctipointa
+		FROM (
+			SELECT
+			    T1.SHIP_NO, T1.BLOCK, T1.SEQNO, T2.JIBUN, T2.MFG_IND,
+			    T1.WGS84_LONGI,
+			    ROUND(T1.WGS84_LATI, 15) WGS84_LATI,
+			    T1.WGS84_LONGI HHIX,
+			    ROUND(T1.WGS84_LATI, 15) HHIY,
+			    T4.AREAGRP, T3.JBNGRP
+			FROM PM07_D30 T1
+			JOIN PM07_D20 T2 ON T1.SHIP_NO = T2.SHIP_NO AND T1.BLOCK = T2.BLOCK AND NOT (T1.WGS84_LONGI IS NULL AND T1.WGS84_LATI IS NULL)
+			JOIN PM07_A70 T3 ON T2.JIBUN = T3.JIBUN AND T2.MFG_IND = T3.MFG_IND AND T3.YNUSE = 'Y'
+			JOIN PM07_E30 T4 ON T3.JBNGRP = T4.JBNGRP AND T4.AREAGRP = 'A100'
+			JOIN PM07_A75 T5 ON T3.JIBUN = T5.JIBUN AND T3.MFG_IND = T5.MFG_IND
+			JOIN PM07_E10 T6 ON T4.AREAGRP = T6.AREAGRP
+			WHERE T2.CURGBN = 'P'
+			AND (T6.MFG_IND1 = #{mfgInd} OR T6.MFG_IND2 = #{mfgInd})
+			AND (T6.MFG_IND1 = T3.MFG_IND OR T6.MFG_IND2 = T3.MFG_IND)
+			AND (CASE WHEN T2.MFG_IND <> 'C' AND (T1.WGS84_LONGI IS NULL OR T1.WGS84_LATI IS NULL) THEN 'X' ELSE 'O' END) = 'O'
+		) T1
+		GROUP BY T1.SHIP_NO, T1.BLOCK, T1.JIBUN, T1.MFG_IND
+		CONNECT BY PRIOR T1.SEQNO  = T1.SEQNO - 1
+		AND PRIOR T1.SHIP_NO = T1.SHIP_NO
+		AND PRIOR T1.BLOCK = T1.BLOCK
+		START WITH T1.SEQNO = 1
+		-->
+	</select>
+
+	<!-- 블록 목록 조회 (개수) -->
+	<select id="getBlockListCount" parameterType="block" resultType="int">
+		/* getBlockListCount */
+		SELECT COUNT(1) count
+		FROM (
+			SELECT
+			    T1.mfg_ind, T1.SHIP_NO, T1.BLOCK, MAX(T1.jibun) jibun, MAX(T1.sorn) sorn,
+	            CASE WHEN (MAX(T1.sorn) = 'S' AND MAX(T1.plateid) IS NOT NULL) THEN MAX(T1.plateid) ELSE '' END plateid,
+			    -- Oracle: ctipoint
+			    SUBSTR(XMLAGG(XMLELEMENT(x,';',wgs84_longi||','||wgs84_lati) ORDER BY seqno).EXTRACT('//text()'), 2) ctipoint
+			    -- PG: ctipoint
+			    -- Array_to_String(Array_Agg(wgs84_longi||','||wgs84_lati ORDER BY seqno), ';') ctipoint
+			FROM (
+			    SELECT
+			        T1.SHIP_NO, T1.BLOCK, T1.SEQNO, T2.JIBUN, T2.MFG_IND, T2.sorn,
+	                MAX(T2. plateid) plateid,
+			        MAX(T1.WGS84_LONGI) WGS84_LONGI,
+			        MAX(T1.WGS84_LATI) WGS84_LATI
+			    FROM PM07_D30 T1
+			    JOIN PM07_D20 T2 ON T1.SHIP_NO = T2.SHIP_NO AND T1.BLOCK = T2.BLOCK AND NOT (T1.WGS84_LONGI IS NULL AND T1.WGS84_LATI IS NULL)
+			    JOIN PM07_A70 T3 ON T2.JIBUN = T3.JIBUN AND T2.MFG_IND = T3.MFG_IND AND T3.YNUSE = 'Y'
+			    JOIN PM07_E30 T4 ON T3.JBNGRP = T4.JBNGRP
+			    JOIN PM07_A75 T5 ON T3.JIBUN = T5.JIBUN AND T3.MFG_IND = T5.MFG_IND
+			    JOIN PM07_E10 T6 ON T4.AREAGRP = T6.AREAGRP
+			    WHERE T2.CURGBN = 'P'
+				<if test="sorn != null and !sorn.equals('')">
+					AND t2.sorn = #{sorn}
+				</if>
+				<if test="shipNo != null and !shipNo.equals('')">
+					AND t2.ship_no LIKE #{shipNo} || '%'
+				</if>
+				<if test="block != null and !block.equals('')">
+					AND t2.block LIKE #{block} || '%'
+				</if>
+				<if test="jibun != null and !jibun.equals('')">
+					AND t2.jibun LIKE #{jibun} || '%'
+				</if>
+				<![CDATA[
+				    AND (T6.MFG_IND1 = T3.MFG_IND OR T6.MFG_IND2 = T3.MFG_IND)
+				    AND (CASE WHEN T2.MFG_IND <> 'C' AND (T1.WGS84_LONGI IS NULL OR T1.WGS84_LATI IS NULL) THEN 'X' ELSE 'O' END) = 'O'
+			    GROUP BY T1.SHIP_NO, T1.BLOCK, T1.SEQNO, T2.JIBUN, T2.MFG_IND, T2.sorn
+				]]>
+			) T1
+			GROUP BY T1.MFG_IND, T1.SHIP_NO, T1.BLOCK
+		)
+	</select>
+
+	<!-- 블록 상세 정보 -->
+	<select id="detailBlock" parameterType="block" resultType="block">
+		/* detailBlock */
+		SELECT ship_no, block, itemprocess_short info_normal, itemprocess_long info_progress
+		FROM pm07_d82
+		WHERE ship_no = #{shipNo}
+			AND block = #{block}
+	</select>
+
+	<!-- 블록 스타일 -->
+	<!-- 요구사항: 본사의 스타일로 통일, 본사 = 해양 = 온산 = 용연 -->
+	<!-- C699: 임의의 값, 블록의 호선을 제외한 정반, 비호선의 색상은 미포 쿼리에 하드코딩 되어있음 -->
+	<!-- CASE WHEN t1.sorn IN ('J', 'N') THEN '250,198,77' -->
+	<select id="getBlockStyle" resultType="blockStyle">
+		/* getBlockStyle */
+		WITH block_style AS (
+		    SELECT mfg_ind, dtlcod, TO_CHAR(muluse1) muluse1
+		    FROM pm07_a10
+		    WHERE lrgcod = 'PA'
+		    AND mfg_ind = '1'
+		    AND midcod = '11'
+		    AND dtlcod IN ('C601','C602','C603','C606','C607','C608','C609')
+		    UNION ALL
+		    SELECT '1', 'C699', '250,198,77' FROM DUAL
+		)
+		SELECT *
+		FROM block_style
+		PIVOT (
+		    MAX(muluse1)
+		    FOR dtlcod
+		    IN ('C601' bg_color, 'C602' border_color, 'C603' border_width, 'C606' font_color, 'C607' font_family, 'C608' font_size, 'C609' font_weight, 'C699' bg_color_etc)
+		)
+	</select>
+
+	<!-- 블록 색상 -->
+	<!-- 요구사항: 본사의 스타일로 통일, 본사 = 해양 = 온산 = 용연 -->
+	<select id="getBlockStatus" resultType="blockStyle">
+		/* getBlockStatus */
+		WITH block_style AS (
+		    SELECT dtlcod stage_code, TO_CHAR(muluse1) bg_color,
+		        decode(dtlcod, 'C711', '조립', 'C712', '선행의장',
+		                        'C713', 'PE', 'C714', '선행도장', 'C715', '탑재') stage_text
+		    FROM pm07_a10
+		    WHERE lrgcod = 'PA'
+		    AND mfg_ind = '1'
+		    AND midcod = '11'
+		    AND dtlcod IN ('C711','C712','C713','C714','C715')
+		)
+		SELECT *
+		FROM block_style
+		ORDER BY stage_code
+	</select>
+</mapper>

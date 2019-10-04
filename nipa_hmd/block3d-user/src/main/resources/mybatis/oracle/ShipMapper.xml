@@ -1,0 +1,386 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="hmd.persistence.oracle.ShipMapper">
+
+    <!-- 호선 도크 형상정보 조회 -->
+    <select id="getDockList" parameterType="shipInfo" resultType="ship">
+        /* getDockList */
+        <![CDATA[
+        WITH TB0 AS
+        (SELECT DTLCOD, MULUSE1
+           FROM PM07_A10
+          WHERE MFG_IND = #{mfgInd}
+            AND LRGCOD  = 'PA'
+            AND MIDCOD  = '20'
+            AND DTLCOD <> '_'
+        ), TB1 AS
+        (SELECT (SELECT MULUSE1 FROM TB0 WHERE DTLCOD = 'LO1M') * (SELECT MULUSE1 FROM TB0 WHERE DTLCOD = 'Z6') M1_TO_PX
+           FROM DUAL
+        ), TB2 AS
+        (SELECT 1 DOCK, 32.5 DOCK_CENTER FROM DUAL UNION ALL
+         SELECT 2 DOCK, 32.5 DOCK_CENTER FROM DUAL UNION ALL
+         SELECT 3 DOCK, 32.5 DOCK_CENTER FROM DUAL UNION ALL
+         SELECT 4 DOCK, 38.0 DOCK_CENTER FROM DUAL
+        )
+        SELECT SPP_NO, SHIP_NO,
+               DOCK, BATCH_NO, FC,F1,F2,F3,F4,AC,A1,
+               A2,A3,A4,B1,SI_NUM, ETC,GRACE_P,CUT_OFF,
+               X, Y, DIRECTION,
+               SHIPSIZE,SK_DESCRIPTION,OWNER,BLOCK,
+               BREADTH,SUJU,FT_LENGTH,LOA,CON_TYPE,
+               BATCH_S, BATCH_F,
+               BATCH_FT, DOCKMOVE, BATCH_YEAR_SER,
+         (CASE WHEN BATCH_FT <= TO_CHAR(SYSDATE, 'YYYYMMDD') OR BATCH_FT IS NULL THEN
+               XF0  || ',' || YF0  || ';' ||
+               XF1  || ',' || YF1  || ';' ||
+               XF2  || ',' || YF2  || ';' ||
+               XF3  || ',' || YF3  || ';' ||
+               XF4  || ',' || YF4  || ';' ||
+               XF5  || ',' || YF5  || ';' ||
+               XF6  || ',' || YF6  || ';' ||
+               XF7  || ',' || YF7  || ';' ||
+               XF8  || ',' || YF8  || ';' ||
+               XF9  || ',' || YF9  || ';' ||
+               XF10 || ',' || YF10 || ';' ||
+               XF11 || ',' || YF11 || ';' ||
+               XF12 || ',' || YF12 || '|' || -- 선수 형상
+               XA0  || ',' || YA0  || ';' ||
+               XA1  || ',' || YA1  || ';' ||
+               XA2  || ',' || YA2  || ';' ||
+               XA3  || ',' || YA3  || ';' ||
+               XA4  || ',' || YA4  || ';' ||
+               XA5  || ',' || YA5  || ';' ||
+               XA6  || ',' || YA6  || ';' ||
+               XA7  || ',' || YA7  || ';' ||
+               XA8  || ',' || YA8  || ';' ||
+               XA9  || ',' || YA9  || ';' ||
+               XA10 || ',' || YA10 || ';' ||
+               XA11 || ',' || YA11 || ';' ||
+               XA12 || ',' || YA12 || '|' || -- 선미 형상
+               XBF  || ',' || YBU  || ';' || XBA  || ',' || YBU || '|' || -- 선체 상단 라인
+               XBF  || ',' || YBB  || ';' || XBA  || ',' || YBB -- 선체 하단 라인
+          ELSE XBF  || ',' || YBU  || ';' ||
+               XBF  || ',' || YBB  || ';' ||
+               XBF  || ',' || YBB  || ';' ||
+               XBF  || ',' || YBB  || ';' ||
+               XBF  || ',' || YBB  || ';' ||
+               XBF  || ',' || YBB  || ';' ||
+               XBF  || ',' || YBB  || ';' ||
+               XBF  || ',' || YBB  || ';' ||
+               XBF  || ',' || YBB  || ';' ||
+               XBF  || ',' || YBB  || ';' ||
+               XBF  || ',' || YBB  || ';' ||
+               XBF  || ',' || YBB  || ';' ||
+               XA12 || ',' || YA12 || '|' || -- 선수 형상
+               XA0  || ',' || YA0  || ';' ||
+               XA1  || ',' || YA1  || ';' ||
+               XA2  || ',' || YA2  || ';' ||
+               XA3  || ',' || YA3  || ';' ||
+               XA4  || ',' || YA4  || ';' ||
+               XA5  || ',' || YA5  || ';' ||
+               XA6  || ',' || YA6  || ';' ||
+               XA7  || ',' || YA7  || ';' ||
+               XA8  || ',' || YA8  || ';' ||
+               XA9  || ',' || YA9  || ';' ||
+               XA10 || ',' || YA10 || ';' ||
+               XA11 || ',' || YA11 || ';' ||
+               XA12 || ',' || YA12 || '|' || -- 선미 형상
+               XBF  || ',' || YBU  || ';' || XBA  || ',' || YBU || '|' || -- 선체 상단 라인
+               XBF  || ',' || YBB  || ';' || XBA  || ',' || YBB END) AS CTIPOINTA,
+               HX1, HY1, EX1, EY1, SHIP_DESC, HHISTARTX, HHISTARTY,
+               -- 호선 배경색
+               (SELECT MULUSE1
+                  FROM PM07_A10
+                 WHERE MFG_IND = #{mfgInd}
+                   AND LRGCOD  = 'PA'
+                   AND MIDCOD  = '11'
+                   AND DTLCOD  = 'C801'
+               ) SHIP_BAK_COLOR,
+               -- 호선 테두리색
+               (SELECT MULUSE1
+                  FROM PM07_A10
+                 WHERE MFG_IND = #{mfgInd}
+                   AND LRGCOD  = 'PA'
+                   AND MIDCOD  = '11'
+                   AND DTLCOD  = 'C802'
+               ) SHIP_LNE_COLOR,
+               -- 호선 테두리 굵기
+               (SELECT MULUSE1
+                  FROM PM07_A10
+                 WHERE MFG_IND = #{mfgInd}
+                   AND LRGCOD  = 'PA'
+                   AND MIDCOD  = '11'
+                   AND DTLCOD  = 'C803'
+               ) SHIP_LNE_THICK,
+               -- 호선 글자색
+               (SELECT MULUSE1
+                  FROM PM07_A10
+                 WHERE MFG_IND = #{mfgInd}
+                   AND LRGCOD  = 'PA'
+                   AND MIDCOD  = '11'
+                   AND DTLCOD  = 'C806'
+               ) SHIP_TXT_COLOR,
+               -- 호선 글자 폰트
+               (SELECT MULUSE1
+                  FROM PM07_A10
+                 WHERE MFG_IND = #{mfgInd}
+                   AND LRGCOD  = 'PA'
+                   AND MIDCOD  = '11'
+                   AND DTLCOD  = 'C807'
+               ) SHIP_TXT_FONT,
+               -- 호선 글자 크기
+               (SELECT MULUSE1
+                  FROM PM07_A10
+                 WHERE MFG_IND = #{mfgInd}
+                   AND LRGCOD  = 'PA'
+                   AND MIDCOD  = '11'
+                   AND DTLCOD  = 'C808'
+               ) SHIP_TXT_SIZE,
+               -- 호선 글자 STYLE
+               (SELECT MULUSE1
+                  FROM PM07_A10
+                 WHERE MFG_IND = #{mfgInd}
+                   AND LRGCOD  = 'PA'
+                   AND MIDCOD  = '11'
+                   AND DTLCOD  = 'C809'
+               ) SHIP_TXT_STYLE
+          FROM (SELECT R3.BATCH_YEAR_SER||'배치' BATCH_YEAR_SER,
+                        R2.SPP_NO, R2.SHIP SHIP_NO,
+                       R2.DOCK, R2.BATCH_NO, R3.FC,R3.F1,R3.F2,R3.F3,R3.F4,R3.AC,R3.A1,
+                       R3.A2,R3.A3,R3.A4,R3.B1,R3.SI_NUM, '' ETC,R3.GRACE_P,R3.CUT_OFF,
+                       R2.X, R2.Y, R2.DIRECTION,
+                       R3.SHIPSIZE,R5.SK_DESCRIPTION,R3.OWNER,R2.BLOCK,
+                       R3.BREADTH,R3.SUJU,R3.FT_LENGTH, R3.LOA, R3.CON_TYPE,
+                       TO_CHAR(R2.BATCH_S,'YYYYMMDD') BATCH_S, TO_CHAR(R2.BATCH_F,'YYYYMMDD') BATCH_F,
+                       TO_CHAR(R3.FT,'YYYYMMDD') BATCH_FT ,  R2.DELAY_YN AS DOCKMOVE,
+                       --F 선수---------------------------------------------------------------------
+                       CASE WHEN R2.DIRECTION = 'L' THEN R2.X + R6.GAP          + R3.FC
+                            ELSE                         R2.X + R6.GAP + R3.LOA - R3.FC         END * (SELECT M1_TO_PX FROM TB1 WHERE ROWNUM = 1) XF0,
+                       CASE WHEN R2.DIRECTION = 'L' THEN R2.X + R6.GAP          + R3.FC / 5 * 4
+                            ELSE                         R2.X + R6.GAP + R3.LOA - R3.FC / 5 * 4 END * (SELECT M1_TO_PX FROM TB1 WHERE ROWNUM = 1) XF1,
+                       CASE WHEN R2.DIRECTION = 'L' THEN R2.X + R6.GAP          + R3.FC / 5 * 3
+                            ELSE                         R2.X + R6.GAP + R3.LOA - R3.FC / 5 * 3 END * (SELECT M1_TO_PX FROM TB1 WHERE ROWNUM = 1) XF2,
+                       CASE WHEN R2.DIRECTION = 'L' THEN R2.X + R6.GAP          + R3.FC / 5 * 2
+                            ELSE                         R2.X + R6.GAP + R3.LOA - R3.FC / 5 * 2 END * (SELECT M1_TO_PX FROM TB1 WHERE ROWNUM = 1) XF3,
+                       CASE WHEN R2.DIRECTION = 'L' THEN R2.X + R6.GAP          + R3.FC / 5 * 1
+                            ELSE                         R2.X + R6.GAP + R3.LOA - R3.FC / 5 * 1 END * (SELECT M1_TO_PX FROM TB1 WHERE ROWNUM = 1) XF4,
+                       CASE WHEN R2.DIRECTION = 'L' THEN R2.X + R6.GAP          + R3.FC / 5 * 0
+                            ELSE                         R2.X + R6.GAP + R3.LOA - R3.FC / 5 * 0 END * (SELECT M1_TO_PX FROM TB1 WHERE ROWNUM = 1) XF5,
+                       CASE WHEN R2.DIRECTION = 'L' THEN R2.X + R6.GAP          + R3.FC / 5 * 0
+                            ELSE                         R2.X + R6.GAP + R3.LOA - R3.FC / 5 * 0 END * (SELECT M1_TO_PX FROM TB1 WHERE ROWNUM = 1) XF6,
+                       CASE WHEN R2.DIRECTION = 'L' THEN R2.X + R6.GAP          + R3.FC / 5 * 0
+                            ELSE                         R2.X + R6.GAP + R3.LOA - R3.FC / 5 * 0 END * (SELECT M1_TO_PX FROM TB1 WHERE ROWNUM = 1) XF7,
+                       CASE WHEN R2.DIRECTION = 'L' THEN R2.X + R6.GAP          + R3.FC / 5 * 1
+                            ELSE                         R2.X + R6.GAP + R3.LOA - R3.FC / 5 * 1 END * (SELECT M1_TO_PX FROM TB1 WHERE ROWNUM = 1) XF8,
+                       CASE WHEN R2.DIRECTION = 'L' THEN R2.X + R6.GAP          + R3.FC / 5 * 2
+                            ELSE                         R2.X + R6.GAP + R3.LOA - R3.FC / 5 * 2 END * (SELECT M1_TO_PX FROM TB1 WHERE ROWNUM = 1) XF9,
+                       CASE WHEN R2.DIRECTION = 'L' THEN R2.X + R6.GAP          + R3.FC / 5 * 3
+                            ELSE                         R2.X + R6.GAP + R3.LOA - R3.FC / 5 * 3 END * (SELECT M1_TO_PX FROM TB1 WHERE ROWNUM = 1) XF10,
+                       CASE WHEN R2.DIRECTION = 'L' THEN R2.X + R6.GAP          + R3.FC / 5 * 4
+                            ELSE                         R2.X + R6.GAP + R3.LOA - R3.FC / 5 * 4 END * (SELECT M1_TO_PX FROM TB1 WHERE ROWNUM = 1) XF11,
+                       CASE WHEN R2.DIRECTION = 'L' THEN R2.X + R6.GAP          + R3.FC
+                            ELSE                         R2.X + R6.GAP + R3.LOA - R3.FC         END * (SELECT M1_TO_PX FROM TB1 WHERE ROWNUM = 1) XF12,
+                       (R2.Y                               ) * (SELECT M1_TO_PX FROM TB1 WHERE ROWNUM = 1) YF0,
+                       (R2.Y + R3.BREADTH / 2 - (R3.F4 / 2)) * (SELECT M1_TO_PX FROM TB1 WHERE ROWNUM = 1) YF1,
+                       (R2.Y + R3.BREADTH / 2 - (R3.F3 / 2)) * (SELECT M1_TO_PX FROM TB1 WHERE ROWNUM = 1) YF2,
+                       (R2.Y + R3.BREADTH / 2 - (R3.F2 / 2)) * (SELECT M1_TO_PX FROM TB1 WHERE ROWNUM = 1) YF3,
+                       (R2.Y + R3.BREADTH / 2 - (R3.F1 / 2)) * (SELECT M1_TO_PX FROM TB1 WHERE ROWNUM = 1) YF4,
+                       (R2.Y + R3.BREADTH / 2 - 7          ) * (SELECT M1_TO_PX FROM TB1 WHERE ROWNUM = 1) YF5,
+                       (R2.Y + R3.BREADTH / 2              ) * (SELECT M1_TO_PX FROM TB1 WHERE ROWNUM = 1) YF6,
+                       (R2.Y + R3.BREADTH / 2 + 7          ) * (SELECT M1_TO_PX FROM TB1 WHERE ROWNUM = 1) YF7,
+                       (R2.Y + R3.BREADTH / 2 + (R3.F1 / 2)) * (SELECT M1_TO_PX FROM TB1 WHERE ROWNUM = 1) YF8,
+                       (R2.Y + R3.BREADTH / 2 + (R3.F2 / 2)) * (SELECT M1_TO_PX FROM TB1 WHERE ROWNUM = 1) YF9,
+                       (R2.Y + R3.BREADTH / 2 + (R3.F3 / 2)) * (SELECT M1_TO_PX FROM TB1 WHERE ROWNUM = 1) YF10,
+                       (R2.Y + R3.BREADTH / 2 + (R3.F4 / 2)) * (SELECT M1_TO_PX FROM TB1 WHERE ROWNUM = 1) YF11,
+                       (R2.Y + R3.BREADTH                  ) * (SELECT M1_TO_PX FROM TB1 WHERE ROWNUM = 1) YF12,
+                       --A 선미---------------------------------------------------------------------
+                       CASE WHEN R3.FT > TRUNC(SYSDATE) AND R2.DIRECTION = 'L' THEN R2.X + R6.GAP + R3.FT_LENGTH - R3.AC
+                            WHEN R2.DIRECTION = 'L' THEN R2.X + R6.GAP + R3.LOA - R3.AC
+                            ELSE                         R2.X + R6.GAP          + R3.AC         END * (SELECT M1_TO_PX FROM TB1 WHERE ROWNUM = 1) XA0,
+                       CASE WHEN R3.FT > TRUNC(SYSDATE) AND R2.DIRECTION = 'L' THEN R2.X + R6.GAP + R3.FT_LENGTH - R3.AC / 5 * 4
+                            WHEN R2.DIRECTION = 'L' THEN R2.X + R6.GAP + R3.LOA - R3.AC / 5 * 4
+                            ELSE                         R2.X + R6.GAP          + R3.AC / 5 * 4 END * (SELECT M1_TO_PX FROM TB1 WHERE ROWNUM = 1) XA1,
+                       CASE WHEN R3.FT > TRUNC(SYSDATE) AND R2.DIRECTION = 'L' THEN R2.X + R6.GAP + R3.FT_LENGTH - R3.AC / 5 * 3
+                            WHEN R2.DIRECTION = 'L' THEN R2.X + R6.GAP + R3.LOA - R3.AC / 5 * 3
+                            ELSE                         R2.X + R6.GAP          + R3.AC / 5 * 3 END * (SELECT M1_TO_PX FROM TB1 WHERE ROWNUM = 1) XA2,
+                       CASE WHEN R3.FT > TRUNC(SYSDATE) AND R2.DIRECTION = 'L' THEN R2.X + R6.GAP + R3.FT_LENGTH - R3.AC / 5 * 2
+                            WHEN R2.DIRECTION = 'L' THEN R2.X + R6.GAP + R3.LOA - R3.AC / 5 * 2
+                            ELSE                         R2.X + R6.GAP          + R3.AC / 5 * 2 END * (SELECT M1_TO_PX FROM TB1 WHERE ROWNUM = 1) XA3,
+                       CASE WHEN R3.FT > TRUNC(SYSDATE) AND R2.DIRECTION = 'L' THEN R2.X + R6.GAP + R3.FT_LENGTH - R3.AC / 5 * 1
+                            WHEN R2.DIRECTION = 'L' THEN R2.X + R6.GAP + R3.LOA - R3.AC / 5 * 1
+                            ELSE                         R2.X + R6.GAP          + R3.AC / 5 * 1 END * (SELECT M1_TO_PX FROM TB1 WHERE ROWNUM = 1) XA4,
+                       CASE WHEN R3.FT > TRUNC(SYSDATE) AND R2.DIRECTION = 'L' THEN R2.X + R6.GAP + R3.FT_LENGTH - R3.AC / 5 * 0
+                            WHEN R2.DIRECTION = 'L' THEN R2.X + R6.GAP + R3.LOA - R3.AC / 5 * 0
+                            ELSE                         R2.X + R6.GAP          + R3.AC / 5 * 0 END * (SELECT M1_TO_PX FROM TB1 WHERE ROWNUM = 1) XA5,
+                       CASE WHEN R3.FT > TRUNC(SYSDATE) AND R2.DIRECTION = 'L' THEN R2.X + R6.GAP + R3.FT_LENGTH - R3.AC / 5 * 0
+                            WHEN R2.DIRECTION = 'L' THEN R2.X + R6.GAP + R3.LOA - R3.AC / 5 * 0
+                            ELSE                         R2.X + R6.GAP          + R3.AC / 5 * 0 END * (SELECT M1_TO_PX FROM TB1 WHERE ROWNUM = 1) XA6,
+                       CASE WHEN R3.FT > TRUNC(SYSDATE) AND R2.DIRECTION = 'L' THEN R2.X + R6.GAP + R3.FT_LENGTH - R3.AC / 5 * 0
+                            WHEN R2.DIRECTION = 'L' THEN R2.X + R6.GAP + R3.LOA - R3.AC / 5 * 0
+                            ELSE                         R2.X + R6.GAP          + R3.AC / 5 * 0 END * (SELECT M1_TO_PX FROM TB1 WHERE ROWNUM = 1) XA7,
+                       CASE WHEN R3.FT > TRUNC(SYSDATE) AND R2.DIRECTION = 'L' THEN R2.X + R6.GAP + R3.FT_LENGTH - R3.AC / 5 * 1
+                            WHEN R2.DIRECTION = 'L' THEN R2.X + R6.GAP + R3.LOA - R3.AC / 5 * 1
+                            ELSE                         R2.X + R6.GAP          + R3.AC / 5 * 1 END * (SELECT M1_TO_PX FROM TB1 WHERE ROWNUM = 1) XA8,
+                       CASE WHEN R3.FT > TRUNC(SYSDATE) AND R2.DIRECTION = 'L' THEN R2.X + R6.GAP + R3.FT_LENGTH - R3.AC / 5 * 2
+                            WHEN R2.DIRECTION = 'L' THEN R2.X + R6.GAP + R3.LOA - R3.AC / 5 * 2
+                            ELSE                         R2.X + R6.GAP          + R3.AC / 5 * 2 END * (SELECT M1_TO_PX FROM TB1 WHERE ROWNUM = 1) XA9,
+                       CASE WHEN R3.FT > TRUNC(SYSDATE) AND R2.DIRECTION = 'L' THEN R2.X + R6.GAP + R3.FT_LENGTH - R3.AC / 5 * 3
+                            WHEN R2.DIRECTION = 'L' THEN R2.X + R6.GAP + R3.LOA - R3.AC / 5 * 3
+                            ELSE                         R2.X + R6.GAP          + R3.AC / 5 * 3 END * (SELECT M1_TO_PX FROM TB1 WHERE ROWNUM = 1) XA10,
+                       CASE WHEN R3.FT > TRUNC(SYSDATE) AND R2.DIRECTION = 'L' THEN R2.X + R6.GAP + R3.FT_LENGTH - R3.AC / 5 * 4
+                            WHEN R2.DIRECTION = 'L' THEN R2.X + R6.GAP + R3.LOA - R3.AC / 5 * 4
+                            ELSE                         R2.X + R6.GAP          + R3.AC / 5 * 4 END * (SELECT M1_TO_PX FROM TB1 WHERE ROWNUM = 1) XA11,
+                       CASE WHEN R3.FT > TRUNC(SYSDATE) AND R2.DIRECTION = 'L' THEN R2.X + R6.GAP + R3.FT_LENGTH - R3.AC
+                            WHEN R2.DIRECTION = 'L' THEN R2.X + R6.GAP + R3.LOA - R3.AC
+                            ELSE                         R2.X + R6.GAP          + R3.AC         END * (SELECT M1_TO_PX FROM TB1 WHERE ROWNUM = 1) XA12,
+                       (R2.Y                               ) * (SELECT M1_TO_PX FROM TB1 WHERE ROWNUM = 1) YA0,
+                       (R2.Y + R3.BREADTH / 2 - (R3.A4 / 2)) * (SELECT M1_TO_PX FROM TB1 WHERE ROWNUM = 1) YA1,
+                       (R2.Y + R3.BREADTH / 2 - (R3.A3 / 2)) * (SELECT M1_TO_PX FROM TB1 WHERE ROWNUM = 1) YA2,
+                       (R2.Y + R3.BREADTH / 2 - (R3.A2 / 2)) * (SELECT M1_TO_PX FROM TB1 WHERE ROWNUM = 1) YA3,
+                       (R2.Y + R3.BREADTH / 2 - (R3.A1 / 2)) * (SELECT M1_TO_PX FROM TB1 WHERE ROWNUM = 1) YA4,
+                       (R2.Y + R3.BREADTH / 2 - (R3.B1 / 2)) * (SELECT M1_TO_PX FROM TB1 WHERE ROWNUM = 1) YA5,
+                       (R2.Y + R3.BREADTH / 2              ) * (SELECT M1_TO_PX FROM TB1 WHERE ROWNUM = 1) YA6,
+                       (R2.Y + R3.BREADTH / 2 + (R3.B1 / 2)) * (SELECT M1_TO_PX FROM TB1 WHERE ROWNUM = 1) YA7,
+                       (R2.Y + R3.BREADTH / 2 + (R3.A1 / 2)) * (SELECT M1_TO_PX FROM TB1 WHERE ROWNUM = 1) YA8,
+                       (R2.Y + R3.BREADTH / 2 + (R3.A2 / 2)) * (SELECT M1_TO_PX FROM TB1 WHERE ROWNUM = 1) YA9,
+                       (R2.Y + R3.BREADTH / 2 + (R3.A3 / 2)) * (SELECT M1_TO_PX FROM TB1 WHERE ROWNUM = 1) YA10,
+                       (R2.Y + R3.BREADTH / 2 + (R3.A4 / 2)) * (SELECT M1_TO_PX FROM TB1 WHERE ROWNUM = 1) YA11,
+                       (R2.Y + R3.BREADTH                  ) * (SELECT M1_TO_PX FROM TB1 WHERE ROWNUM = 1) YA12,
+                       --B 선체----------------------------------------------------------------------
+                       CASE WHEN R3.FT > TRUNC(SYSDATE) AND R2.DIRECTION = 'L' THEN R2.X + R6.GAP
+                            WHEN R3.FT > TRUNC(SYSDATE) THEN R2.X + R6.GAP - (R3.LOA - R3.FT_LENGTH) - R3.FC
+                            WHEN R2.DIRECTION = 'L' THEN R2.X + R6.GAP          + R3.FC
+                            ELSE                         R2.X + R6.GAP + R3.LOA - R3.FC         END * (SELECT M1_TO_PX FROM TB1 WHERE ROWNUM = 1) XBF,
+                       CASE WHEN R3.FT > TRUNC(SYSDATE) AND R2.DIRECTION = 'L' THEN R2.X + R6.GAP + R3.FT_LENGTH - R3.AC
+                            WHEN R3.FT > TRUNC(SYSDATE) THEN R2.X + R6.GAP - R3.FT_LENGTH + R3.FC
+                            WHEN R2.DIRECTION = 'L' THEN R2.X + R6.GAP + R3.LOA - R3.AC
+                            ELSE                         R2.X + R6.GAP          + R3.AC         END * (SELECT M1_TO_PX FROM TB1 WHERE ROWNUM = 1) XBA,
+                       (R2.Y                               ) * (SELECT M1_TO_PX FROM TB1 WHERE ROWNUM = 1) YBU,
+                       (R2.Y + R3.BREADTH                  ) * (SELECT M1_TO_PX FROM TB1 WHERE ROWNUM = 1) YBB,
+                       --Hole----------------------------------------------------------------------
+                       --CASE WHEN R2.DIRECTION = 'L' THEN R2.X + R6.GAP + R3.LOA - R3.AC / 5 * 5
+                       --     ELSE                         R2.X + R6.GAP          + R3.AC / 5 * 5 END * (SELECT M1_TO_PX FROM TB1 WHERE ROWNUM = 1) HX1,
+                       CASE WHEN R3.FT > TRUNC(SYSDATE) AND R3.AC = 0 THEN CASE WHEN R2.DIRECTION = 'L' THEN R2.X + R6.GAP + R3.FT_LENGTH
+                                                                                ELSE                         R2.X + R6.GAP + R3.LOA - R3.LBP END
+                            WHEN R3.FT > TRUNC(SYSDATE) THEN  CASE WHEN R2.DIRECTION = 'L' THEN R2.X + R6.GAP + R3.FT_LENGTH - R3.AC / 5 * 5
+                                                                   ELSE                         R2.X + R6.GAP          + R3.AC / 5 * 5 END
+                            WHEN R3.AC = 0 THEN CASE WHEN R2.DIRECTION = 'L' THEN R2.X + R6.GAP + R3.LBP
+                                                     ELSE                         R2.X + R6.GAP + R3.LOA - R3.LBP END
+                            ELSE                CASE WHEN R2.DIRECTION = 'L' THEN R2.X + R6.GAP + R3.LOA - R3.AC / 5 * 5
+                                                     ELSE                         R2.X + R6.GAP          + R3.AC / 5 * 5 END
+                            END * (SELECT M1_TO_PX FROM TB1 WHERE ROWNUM = 1) HX1,
+                       CASE WHEN R2.Y + R3.BREADTH / 2 > (SELECT DOCK_CENTER FROM TB2 WHERE R2.DOCK = DOCK AND ROWNUM = 1) THEN (R2.Y + R3.BREADTH)
+                            ELSE                                                                                                R2.Y END * (SELECT M1_TO_PX FROM TB1 WHERE ROWNUM = 1) HY1,
+                       --ETC----------------------------------------------------------------------
+                       CASE WHEN R3.FT > TRUNC(SYSDATE) THEN (R2.X + R6.GAP + R3.FT_LENGTH / 2) * (SELECT M1_TO_PX FROM TB1 WHERE ROWNUM = 1)
+                            ELSE (R2.X + R6.GAP + R3.LOA / 2) * (SELECT M1_TO_PX FROM TB1 WHERE ROWNUM = 1) END EX1,
+                       CASE WHEN R2.Y + R3.BREADTH / 2 > (SELECT DOCK_CENTER FROM TB2 WHERE R2.DOCK = DOCK AND ROWNUM = 1) THEN (R2.Y + R3.BREADTH + 6)
+                            ELSE                                                                                                R2.Y - 6 END * (SELECT M1_TO_PX FROM TB1 WHERE ROWNUM = 1) EY1,
+                       ------------------------------------------------------------------------
+                       R2.SHIP || '(' || R3.SHIPSIZE || ' ' || R5.SK_DESCRIPTION || ')' || CHR(10) || CHR(13) || CHR(10) || CHR(13) || R3.OWNER || ' #' || R3.SI_NUM || ' (' || TRIM(TO_CHAR(R3.LOA, '999,999,999.99')) || ' x ' || TRIM(TO_CHAR(R3.BREADTH, '999,999,999.99')) || ')'  SHIP_DESC,
+                       (   SELECT NVL(T11.STX, 0) HHISTARTX
+                             FROM PM07_E10 T1
+                             JOIN PM07_E30 T11 ON T1.AREAGRP = T11.AREAGRP
+                             JOIN PM07_E20 T2 ON T11.JBNGRP = T2.JBNGRP
+                             JOIN PM07_A76 T4 ON T2.JBNGRP LIKE '1' || T4.DOCK || 'DCK'
+                            WHERE (T1.MFG_IND1 = #{mfgInd} OR T1.MFG_IND2 = #{mfgInd})
+                              AND (TRIM(#{areagrp}) IS NULL OR (TRIM(#{areagrp}) IS NOT NULL AND T1.AREAGRP = #{areagrp}))
+                              AND T1.YNUSE = 'Y'
+                              AND R2.DOCK = T4.DOCK
+                              AND ROWNUM = 1
+                       ) HHISTARTX,
+                       (   SELECT NVL(T11.STY, 0) HHISTARTY
+                             FROM PM07_E10 T1
+                             JOIN PM07_E30 T11 ON T1.AREAGRP = T11.AREAGRP
+                             JOIN PM07_E20 T2 ON T11.JBNGRP = T2.JBNGRP
+                             JOIN PM07_A76 T4 ON T2.JBNGRP LIKE '1' || T4.DOCK || 'DCK'
+                            WHERE (T1.MFG_IND1 = #{mfgInd} OR T1.MFG_IND2 = #{mfgInd})
+                              AND (TRIM(#{areagrp}) IS NULL OR (TRIM(#{areagrp}) IS NOT NULL AND T1.AREAGRP = #{areagrp}))
+                              AND T1.YNUSE = 'Y'
+                              AND R2.DOCK = T4.DOCK
+                              AND ROWNUM = 1
+                       ) HHISTARTY
+                  FROM SPP_LIST_HMD_VIEW R1, SPP_DOCK_ARRANGE_HMD_VIEW R2, SPP_SHIP_HMD_VIEW R3, SPP_STD_SHIP_T_VIEW R4, SPP_STD_SHIPKIND_VIEW R5, (SELECT 10 GAP FROM DUAL) R6
+                 WHERE R1.SPP_GUBUN = 'B'
+                   AND R1.DECISION  = 'B'
+                   AND R1.SPP_NO = R2.SPP_NO
+                   AND R2.SPP_NO = R3.SPP_NO
+                   AND R2.SHIP = R3.SHIP
+                   AND R3.STD_SHIP_CODE = R4.STD_SHIP_CODE
+                   AND R4.SHIPKIND_CD = R5.SHIPKIND_CD(+)
+                   AND TRUNC(SYSDATE) BETWEEN R2.BATCH_S AND R2.BATCH_F
+                   AND R2.DOCK IN ( SELECT DISTINCT T4.DOCK
+                                      FROM PM07_E10 T1
+                                      JOIN PM07_E30 T11 ON T1.AREAGRP = T11.AREAGRP
+                                      JOIN PM07_E20 T2 ON T11.JBNGRP = T2.JBNGRP
+                                      JOIN PM07_A76 T4 ON T2.JBNGRP LIKE '1' || T4.DOCK || 'DCK'
+                                     WHERE (T1.MFG_IND1 = #{mfgInd} OR T1.MFG_IND2 = #{mfgInd})
+                                       AND (TRIM(#{areagrp}) IS NULL OR (TRIM(#{areagrp}) IS NOT NULL AND T1.AREAGRP = #{areagrp}))
+                                       AND T1.YNUSE = 'Y'
+                                  )
+               )
+        ORDER BY DOCK, BATCH_NO DESC
+        ]]>
+    </select>
+
+    <!-- 호선 안벽 형상정보 조회 -->
+    <select id="getQuayList" parameterType="shipInfo" resultType="ship">
+        /* getQuayList */
+        <![CDATA[
+        SELECT
+            R1.WKDATE,R1.SHIP_NO,R1.QUAY,NVL(R1.CONT,'P') CONT,R1.WKSTDT,R1.WKFIDT,NVL(R1.AHOLE,'M') AHOLE,NVL(R1.ALONG,1) ALONG,
+            NVL(R1.POSX,R1.POSX_STD) POSX, NVL(R1.POSY,R1.POSY_STD + (TO_NUMBER(R1.ALONG) - 1) * 34 + R2.BREADTH / 2) POSY,
+            DECODE(R1.POSX,NULL,'0','1') SAVED,
+            R2.FC,R2.F1,R2.F2,R2.F3,R2.F4,R2.AC,R2.A1,R2.A2,R2.A3,R2.A4,R2.B1,
+            R2.SHIPSIZE,R2.SK_DESCRIPTION,R2.OWNER,R2.BREADTH,R2.FT_LENGTH, R2.DEPTH, R2.LOA,R2.CON_TYPE,R2.BATCH_S,R2.BATCH_F,R2.FT BATCH_FT,
+            TO_CHAR(R3.WC,'YYYYMMDD') WC,TO_CHAR(R3.KL,'YYYYMMDD') KL,TO_CHAR(R3.LC,'YYYYMMDD') LC,TO_CHAR(R3.SP,'YYYYMMDD') SP,TO_CHAR(R3.DG,'YYYYMMDD') DG,
+            TO_CHAR(R3.BLR,'YYYYMMDD') BLR,TO_CHAR(R3.ME,'YYYYMMDD') ME,TO_CHAR(R3.DWT,'YYYYMMDD') DWT,TO_CHAR(R3.SP_S,'YYYYMMDD') SP_S,
+            TO_CHAR(R3.SP_F,'YYYYMMDD') SP_F,TO_CHAR(R3.ST_S,'YYYYMMDD') ST_S,TO_CHAR(R3.ST_F,'YYYYMMDD') ST_F,TO_CHAR(R3.NS,'YYYYMMDD') NS,
+            TO_CHAR(R3.DL_O,'YYYYMMDD') DL_O,TO_CHAR(R3.DL_C,'YYYYMMDD') DL_C,
+            CASE WHEN TO_DATE(R1.WKDATE,'YYYYMMDD') >= R3.FT AND TO_DATE(R1.WKDATE,'YYYYMMDD') < R3.LC THEN 'T' ELSE 'D' END TENDEM,
+            (SELECT	NEW05.F_GET_EMP_NAME(SBN) FROM NEW05.PTB_JIK_SHIP_CHG WHERE	SHIP_NO = R1.SHIP_NO AND JIK_CD = 'Z01' ) PM,
+            R3.PM_PHONE TEL_NO, R3.PM_HP MOBILE,
+            R4.X_POS, R4.Y_POS,
+            DECODE(R3.GIC,'C','외업1부','D','외업2부','E','생산지원') DIC, TO_NUMBER(R5.SERIES_NO) AS SERIES_NO,
+            (SELECT	NEW05.F_GET_EMP_NAME(SBN) FROM NEW05.PTB_JIK_SHIP_CHG WHERE	SHIP_NO = R1.SHIP_NO AND JIK_CD = 'V01' ) AS PM_NAME
+            FROM
+            (
+                SELECT TO_CHAR(R1.CAL_DATE,'YYYYMMDD') WKDATE, R1.SHIP_NO,R1.QUAY,R1.CONT,
+                TO_CHAR(R1.WKSTPLDT,'YYYYMMDD') WKSTDT,TO_CHAR(R1.WKFIPLDT,'YYYYMMDD') WKFIDT,
+                R1.AHOLE,R1.ALONG,
+                R3.POSX,R4.POSX POSX_STD, R3.POSY,R4.POSY POSY_STD
+                FROM
+                (
+                    SELECT R1.CAL_DATE, R2.SHIP_NO,R2.QUAY,R2.CONT,R2.WKSTPLDT,R2.WKFIPLDT,R2.AHOLE,R2.ALONG
+                    FROM NEW05.PTB_NETDAY R1, new02.QUAY_SCHEDULE R2
+                    WHERE R1.CAL_DATE = trunc(sysdate)
+                    AND R1.CAL_DATE BETWEEN R2.WKSTPLDT AND R2.WKFIPLDT
+                ) R1, new02.QUAY_DAY_POS R3, new02.QUAY_STD_POS R4
+                WHERE R1.CAL_DATE = R3.WKDT(+)
+                AND R1.SHIP_NO = R3.SHIP_NO(+)
+                AND R1.QUAY = R4.QUAY(+)
+                AND R1.CONT = R4.CONT(+)
+            ) R1,
+            (
+            SELECT
+                TRIM(R2.SHIP) || '06' SHIP_NO,
+                MAX(R2.FC) FC,MAX(R2.F1) F1,MAX(R2.F2) F2,MAX(R2.F3) F3,MAX(R2.F4) F4,MAX(R2.AC) AC,MAX(R2.A1) A1,
+                MAX(R2.A2) A2,MAX(R2.A3) A3,MAX(R2.A4) A4,MAX(R2.B1) B1,MAX(R2.SHIPSIZE) SHIPSIZE ,MAX(R4.SK_DESCRIPTION) SK_DESCRIPTION,
+                MAX(R2.OWNER) OWNER,MAX(R2.BREADTH) BREADTH,MAX(R2.FT_LENGTH) FT_LENGTH, MAX(R2.DEPTH) DEPTH, MAX(R2.LOA) LOA,MAX(R2.CON_TYPE) CON_TYPE,
+                MAX(R2.KL) BATCH_S, MAX(R2.LC) BATCH_F, MAX(R2.FT) FT
+            FROM  PS01.SPP_SHIP_ALL R2, PS01.SPP_STD_SHIP R3, PS01.SPP_STD_SHIPKIND R4
+            WHERE R2.SHIP NOT LIKE 'Z%'
+            AND R2.SHIP NOT LIKE 'U%'
+            AND R2.STD_SHIP_CODE = R3.STD_SHIP_CODE
+            AND R3.SHIPKIND_CD = R4.SHIPKIND_CD(+)
+            GROUP BY R2.SHIP
+        ) R2, new02.SHIP_EVENT R3, new02.QUAY_SHIP_INFO_POS R4, NEW05.PTB_SHIP_BASIC R5
+        WHERE R1.SHIP_NO = R2.SHIP_NO(+)
+        AND R1.SHIP_NO = R3.SHIP_NO(+)
+        AND R1.SHIP_NO = R4.SHIP_NO(+)
+        AND R1.SHIP_NO = R5.SHIP_NO(+)
+        ORDER BY R1.WKDATE, R3.DL_O, R1.QUAY, R1.ALONG
+        ]]>
+    </select>
+</mapper>

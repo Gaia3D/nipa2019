@@ -1,0 +1,52 @@
+{  
+   "attributes":{  
+      "isPhysical":false,
+      "nodeType":"root",
+      "projectType":"dock",
+      "specularLighting":true
+   },
+   "children":[  
+      {  
+         "attributes":{  
+            "isPhysical":true,
+            "nodeType":"dock"
+         },
+         "children":[  
+
+         ],
+         "data_key":"2Dock",
+         "data_name":"2Dock",
+         "mapping_type":"boundingboxbottomcenter",
+         "latitude":35.50909384653502,
+         "longitude":129.4017697408335,
+         "height":0,
+         "heading":0,
+         "pitch":0,
+         "roll":0
+      },
+      {  
+         "attributes":{  
+            "isPhysical":true,
+            "nodeType":"mipo"
+         },
+         "children":[  
+
+         ],
+         "data_key":"3Dock",
+         "data_name":"3Dock",
+         "mapping_type":"boundingboxbottomcenter",
+         "latitude":35.50917052829493,
+         "longitude":129.40168442585482,
+         "height":0,
+         "heading":0,
+         "pitch":0,
+         "roll":0
+      }
+   ],
+   "parent":0,
+   "depth":1,
+   "view_order":2,
+   "data_key":"dock",
+   "data_name":"dock",
+   "mapping_type":"origin"
+}

@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="hmd.persistence.oracle.MaterialDeliveryMapper">
+
+    <select id="getListShipNo" parameterType="string" resultType="materialDelivery">
+        /* getListShipNo */
+        SELECT DISTINCT r1.ship_no
+        FROM trans_req_test@hmdgw r1, ptb_ship_basic r2
+        WHERE r1.trns_req_dt = TRUNC(TO_DATE(#{value},'YYYY-MM-DD')) 
+        	AND r1.ship_no = r2.ship_no
+    </select>
+
+    <select id="getListPorNo" parameterType="materialDelivery" resultType="materialDelivery">
+        /* getListPorNo */
+        SELECT DISTINCT r1.por_no
+        FROM trans_req_test@hmdgw r1
+        WHERE r1.trns_req_dt = TRUNC(TO_DATE(#{searchDate},'YYYY-MM-DD'))
+            <if test="shipNo != null and shipNo != ''">
+			AND r1.ship_no = #{shipNo}
+            </if>
+			AND r1.por_no IS NOT NULL
+        ORDER BY 1
+    </select>
+
+    <select id="getListApplyDepartMent" parameterType="string" resultType="materialDelivery">
+        /* getListApplyDepartMent */
+        SELECT DISTINCT r2.dept_nm, r2.dept_cd
+        FROM  TRANS_REQ_TEST@HMDGW R1, ( 
+        	SELECT R1.SOSOG, R1.SBN, R2.RESP_NM, F_GET_DEPT_NAME(R2.DEPT_CD) AS DEPT_NM, R2.DEPT_CD
+        	FROM ORGCHART R1, PTB_STD_RESP R2
+        	WHERE R1.SOSOG = R2.RESP_CD(+)
+			UNION
+	        SELECT RESP_CD, TRIM('00'||RESP_CD) SBN, R1.RESP_NM, F_GET_DEPT_NAME(R1.DEPT_CD) AS DEPT_NM, R1.DEPT_CD
+    	    FROM  PTB_STD_RESP R1
+        	WHERE R1.REPORT_YN = 'Y'
+        		AND  R1.RESP_CD > '8000'  
+        ) R2
+        WHERE R1.TRNS_REQ_DT = TRUNC(TO_DATE(#{value},'YYYY-MM-DD'))
+        	AND  R1.RGST_USR_ID = R2.SBN(+)
+        	AND R2.DEPT_CD IS NOT NULL
+    </select>
+
+    <select id="getListApplyTeam" parameterType="materialDelivery" resultType="materialDelivery">
+        /* getListApplyTeam */
+        SELECT distinct r2.resp_nm, r2.SOSOG
+            FROM  TRANS_REQ_TEST@HMDGW R1,
+        ( SELECT R1.SOSOG, R1.SBN, R2.RESP_NM, F_GET_DEPT_NAME(R2.DEPT_CD) AS DEPT_NM, r2.dept_cd
+        FROM ORGCHART R1, PTB_STD_RESP R2
+        WHERE R1.SOSOG = R2.RESP_CD(+)
+
+        UNION
+
+        SELECT RESP_CD, TRIM('00'||RESP_CD) SBN, R1.RESP_NM, F_GET_DEPT_NAME(R1.DEPT_CD) AS DEPT_NM, r1.dept_cd
+        FROM  PTB_STD_RESP R1
+        WHERE R1.REPORT_YN = 'Y'
+        AND  R1.RESP_CD > '8000'  ) R2
+        WHERE R1.TRNS_REQ_DT = TRUNC(TO_DATE(#{searchDate},'YYYY-MM-DD'))
+        AND  R1.RGST_USR_ID = R2.SBN(+)
+        <if test="deptCd != null and deptCd != ''">
+            AND  r2.dept_cd = #{deptCd}
+        </if>
+            AND r2.resp_nm IS NOT NULL
+    </select>
+
+    <select id="getListMaterialDeliveryByPor" parameterType="materialDelivery" resultType="materialDelivery">
+        /* getListMaterialDeliveryByPor */
+        SELECT b.*
+        FROM (
+            SELECT a.*, rownum as rnum
+                FROM(
+                    SELECT DISTINCT R2.DEPT_NM, R2.RESP_NM, R1.TRNS_REQ_YYMM||'-'||R1.TRNS_REQ_SER_NO AS TRNS_NO, R1.TRANS_DT,
+                    CASE WHEN R1.TRANS_DT IS NOT NULL THEN '배송완료' ELSE '배송준비' END as trns_status, lat, lng
+                        FROM  TRANS_REQ_TEST@HMDGW R1,
+                    ( SELECT R1.SOSOG, R1.SBN, R2.RESP_NM, F_GET_DEPT_NAME(R2.DEPT_CD) AS DEPT_NM
+                    FROM ORGCHART R1, PTB_STD_RESP R2
+                    WHERE R1.SOSOG = R2.RESP_CD(+)
+
+                    UNION
+
+                    SELECT RESP_CD, TRIM('00'||RESP_CD) SBN, R1.RESP_NM, F_GET_DEPT_NAME(R1.DEPT_CD) AS DEPT_NM
+                    FROM  PTB_STD_RESP R1
+                    WHERE R1.REPORT_YN = 'Y'
+                    AND  R1.RESP_CD > '8000'  ) R2
+                    WHERE R1.TRNS_REQ_DT = TRUNC(TO_DATE(#{searchDate},'YYYY-MM-DD'))
+                    <if test="shipNo != null and shipNo != ''">
+                        AND  R1.SHIP_NO = #{shipNo}
+                    </if>
+                    <if test="porNo != null and porNo != ''">
+                        AND  R1.POR_NO = #{porNo}
+                    </if>
+                        AND  R1.RGST_USR_ID = R2.SBN(+)
+                <![CDATA[
+                ) a
+                WHERE rownum <= (${pageNo}*${pageRows})
+            ) b
+            WHERE rnum >= ((${pageNo}-1)*${pageRows}+1)
+            ]]>
+    </select>
+
+    <select id="getListMaterialDeliveryByPorCount" parameterType="materialDelivery" resultType="int">
+        /* getListMaterialDeliveryByPor */
+        SELECT  count(*)
+            FROM(
+                SELECT DISTINCT R2.DEPT_NM, R2.RESP_NM, R1.TRNS_REQ_YYMM||'-'||R1.TRNS_REQ_SER_NO AS TRNS_NO, R1.TRANS_DT,
+                CASE WHEN R1.TRANS_DT IS NOT NULL THEN '배송완료' ELSE '배송준비' END as trns_status, lat, lng
+                    FROM  TRANS_REQ_TEST@HMDGW R1,
+                ( SELECT R1.SOSOG, R1.SBN, R2.RESP_NM, F_GET_DEPT_NAME(R2.DEPT_CD) AS DEPT_NM
+                FROM ORGCHART R1, PTB_STD_RESP R2
+                WHERE R1.SOSOG = R2.RESP_CD(+)
+
+                UNION
+
+                SELECT RESP_CD, TRIM('00'||RESP_CD) SBN, R1.RESP_NM, F_GET_DEPT_NAME(R1.DEPT_CD) AS DEPT_NM
+                FROM  PTB_STD_RESP R1
+                WHERE R1.REPORT_YN = 'Y'
+                AND  R1.RESP_CD > '8000'  ) R2
+                WHERE R1.TRNS_REQ_DT = TRUNC(TO_DATE(#{searchDate},'YYYY-MM-DD'))
+                <if test="shipNo != null and shipNo != ''">
+                    AND  R1.SHIP_NO = #{shipNo}
+                </if>
+                <if test="porNo != null and porNo != ''">
+                    AND  R1.POR_NO = #{porNo}
+                </if>
+                    AND  R1.RGST_USR_ID = R2.SBN(+)
+            ) a
+    </select>
+
+    <select id="getListMaterialDeliveryByApplyTeam" parameterType="materialDelivery" resultType="materialDelivery">
+        /* getListMaterialDeliveryByApplyTeam */
+       SELECT b.*
+        FROM (
+            SELECT a.*, rownum as rnum
+                FROM (
+                    SELECT DISTINCT R2.DEPT_NM, R2.RESP_NM, R1.TRNS_REQ_YYMM||'-'||R1.TRNS_REQ_SER_NO AS TRNS_NO, R1.TRANS_DT,
+                    CASE WHEN R1.TRANS_DT IS NOT NULL THEN '배송완료' ELSE '배송준비' END as trns_status, lat, lng
+                        FROM  TRANS_REQ_TEST@HMDGW R1,
+                    ( SELECT R1.SOSOG, R1.SBN, R2.RESP_NM, F_GET_DEPT_NAME(R2.DEPT_CD) AS DEPT_NM
+                    FROM ORGCHART R1, PTB_STD_RESP R2
+                    WHERE R1.SOSOG = R2.RESP_CD(+)
+
+                    UNION
+
+                    SELECT RESP_CD, TRIM('00'||RESP_CD) SBN, R1.RESP_NM, F_GET_DEPT_NAME(R1.DEPT_CD) AS DEPT_NM
+                    FROM  PTB_STD_RESP R1
+                    WHERE R1.REPORT_YN = 'Y'
+                    AND  R1.RESP_CD > '8000'  ) R2
+                    WHERE R1.TRNS_REQ_DT = TRUNC(TO_DATE(#{searchDate},'YYYY-MM-DD'))
+                    AND  R1.RGST_USR_ID = R2.SBN(+)
+                    <if test="sosog != null and sosog != ''">
+                        AND  r2.sosog = #{sosog}
+                    </if>
+               ) a
+               <![CDATA[
+                WHERE rownum <= (${pageNo}*${pageRows})
+            ) b
+            WHERE rnum >= ((${pageNo}-1)*${pageRows}+1)
+            ]]>
+    </select>
+
+    <select id="getListMaterialDeliveryByApplyTeamCount" parameterType="materialDelivery" resultType="int">
+        /* getListMaterialDeliveryByApplyTeam */
+        SELECT COUNT(*)
+            FROM (
+                SELECT DISTINCT R2.DEPT_NM, R2.RESP_NM, R1.TRNS_REQ_YYMM||'-'||R1.TRNS_REQ_SER_NO AS TRNS_NO, R1.TRANS_DT,
+                CASE WHEN R1.TRANS_DT IS NOT NULL THEN '배송완료' ELSE '배송준비' END as trns_status, lat, lng
+                    FROM  TRANS_REQ_TEST@HMDGW R1,
+                ( SELECT R1.SOSOG, R1.SBN, R2.RESP_NM, F_GET_DEPT_NAME(R2.DEPT_CD) AS DEPT_NM
+                FROM ORGCHART R1, PTB_STD_RESP R2
+                WHERE R1.SOSOG = R2.RESP_CD(+)
+
+                UNION
+
+                SELECT RESP_CD, TRIM('00'||RESP_CD) SBN, R1.RESP_NM, F_GET_DEPT_NAME(R1.DEPT_CD) AS DEPT_NM
+                FROM  PTB_STD_RESP R1
+                WHERE R1.REPORT_YN = 'Y'
+                AND  R1.RESP_CD > '8000'  ) R2
+                WHERE R1.TRNS_REQ_DT = TRUNC(TO_DATE(#{searchDate},'YYYY-MM-DD'))
+                AND  R1.RGST_USR_ID = R2.SBN(+)
+                <if test="sosog != null and sosog != ''">
+                    AND  r2.sosog = #{sosog}
+                </if>
+            ) a
+    </select>
+
+    <select id="getMaterialDeliveryInfoById" parameterType="materialDelivery" resultType="materialDelivery">
+        /* getMaterialDeliveryInfoById */
+        SELECT TRNS_REQ_DT, TRNS_REQ_LOC, TRANS_DT, SHIP_NO, BLOCK, POR_NO, MATL_SPEC, MATL_UNIT,TRNS_REQ_QTY, LAT,LNG
+            FROM  TRANS_REQ_TEST@HMDGW
+        WHERE trns_req_dt = TRUNC(TO_DATE(#{searchDate},'YYYY-MM-DD'))
+            AND  TRNS_REQ_YYMM = #{trnsReqYymm}
+            AND  TRNS_REQ_SER_NO = #{trnsReqSerNo}
+    </select>
+
+</mapper>

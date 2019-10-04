@@ -1,0 +1,13 @@
+rootProject.name = 'nipa_hmd'
+
+include ':common'
+include ':common-3d'
+include ':block3d-user'
+include ':block3d-admin'
+include ':block3d-conversion'
+
+project(':common').projectDir = "$rootDir/common" as File
+project(':common-3d').projectDir = "$rootDir/common-3d" as File
+project(':block3d-user').projectDir = "$rootDir/block3d-user" as File
+project(':block3d-admin').projectDir = "$rootDir/block3d-admin" as File
+project(':block3d-conversion').projectDir = "$rootDir/block3d-conversion" as File

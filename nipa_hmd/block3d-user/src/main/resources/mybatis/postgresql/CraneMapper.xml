@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="hmd.persistence.postgresql.CraneMapper">
+
+    <!-- 호선의 기준 조회 -->
+    <select id="getCraneJip" resultType="craneJip">
+        /* getCraneJip */
+        SELECT * FROM crane_jib
+    </select>
+	<!-- 호선의 기준 조회 -->
+    <select id="getCraneTower" resultType="craneTower">
+        /* getCraneTower */
+        SELECT * FROM crane_tower
+    </select>
+</mapper>
