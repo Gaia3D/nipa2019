@@ -27,4 +27,4 @@ www.gaia3d.com
 - https://spring.io/projects/spring-boot 참조
 
 # 라이선스
-[LICENSE](https://github.com/Gaia3D/nipa2019/edit/develop/LICENSE.md) 문서 참조
+[LICENSE](https://github.com/Gaia3D/nipa2019/edit/develop/LICENSE) 문서 참조
