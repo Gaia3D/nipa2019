@@ -21,6 +21,9 @@ www.gaia3d.com
 - Right-click the Application.java file for each project to run the Spring Boot App entry from the Run as or debug as menu
 - [Spring Boot Reference](https://spring.io/projects/spring-boot)
 
+# Contributing
+- When modifying or updating the contents, fork first and then modify and request with Pull Request.
+
 # License
 See [LICENSE](https://github.com/Gaia3D/nipa2019/edit/develop/LICENSE) 
 
