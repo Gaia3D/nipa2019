@@ -30,4 +30,4 @@ www.gaia3d.com
 [LICENSE](https://github.com/Gaia3D/nipa2019/edit/develop/LICENSE) 문서 참조
 
 # 사용자그룹
-질문/답변 및 의견제시: [개발자 그룹](https://groups.google.com/forum/#!forum/gaia3d_nipa2019)
+본 프로젝트와 관련된 질문/답변 및 의견은 [개발자 그룹](https://groups.google.com/forum/#!forum/gaia3d_nipa2019) 에서 공유할 수 있습니다.
