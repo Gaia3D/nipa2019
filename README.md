@@ -31,3 +31,4 @@ www.gaia3d.com
 
 # 사용자그룹
 본 프로젝트와 관련된 질문/답변 및 의견은 [개발자 그룹](https://groups.google.com/forum/#!forum/gaia3d_nipa2019) 에서 공유할 수 있습니다.
+본 프로젝트와 관련된 기술문서는 [mago3d 홈페이지(국문)](http://www.mago3d.com/kor/) 과 [mago3d 홈페이지(영문)](http://www.mago3d.com/eng/)에서 확인 할 수 있습니다.
