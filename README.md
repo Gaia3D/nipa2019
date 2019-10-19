@@ -5,7 +5,7 @@ Development of Web Based 3D Block Visualization System for Ship Building Process
 Gaia3D Inc.,  
 www.gaia3d.com
 
-# Getting Startred
+# Getting Started
 #### requirement  
 - JDK 8 installed
 - JAVA_8_HOME environment variable set to JDK 8 home directory
