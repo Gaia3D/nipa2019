@@ -12,6 +12,7 @@
     <typeAliases>
         <typeAlias type="hmd.domain.AccessLog" alias="accessLog"/>
         <typeAlias type="hmd.common3d.conversion.ConversionPolicy" alias="conversionPolicy"/>
+        <typeAlias type="hmd.common3d.conversion.ConversionLog" alias="conversionLog"/>
     </typeAliases>
     
 </configuration>

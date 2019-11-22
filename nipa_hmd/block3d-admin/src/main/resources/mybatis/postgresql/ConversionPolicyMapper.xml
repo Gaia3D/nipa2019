@@ -8,4 +8,22 @@
 		select * from conversion_policy
 	</select>
 	
+	<select id="selectConversionLogCount" resultType="Integer">
+		select count(*) from conversion_log
+	</select>
+	
+	<select id="selectConversionLogList" resultType="conversionLog">
+		select
+			log_seq,
+			ship_no,
+			rev_file,
+			to_char(conversion_date, 'YYYYMMDDHH24MISS') as conversion_date,
+			conversion_state,
+			conversion_result,
+			conversion_desc
+		from
+			conversion_log
+		offset #{offset} limit #{limit}
+	</select>
+	
 </mapper>
