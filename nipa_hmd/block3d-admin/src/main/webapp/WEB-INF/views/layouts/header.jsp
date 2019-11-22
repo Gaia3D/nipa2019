@@ -4,7 +4,7 @@
 <% UserSession userSession = (UserSession)request.getSession().getAttribute(UserSession.KEY); %>
 <div id="headerWrap">
     <div class="header">
-        <h1 onclick="location.href='/facility/layer';">HMD GIS(지리정보시스템)</h1>
+        <h1 onclick="location.href='/facility/layer';">HMD 3D BLOCK(블록 가시화 시스템)</h1>
         <div class="user">
             <span class="admin">관리자</span>
             <%-- <b><%=userSession.getUserName() %></b>

@@ -6,7 +6,9 @@
 		<li id="${userGroupMenu.htmlId }" onclick="location.href='${userGroupMenu.url }'">${userGroupMenu.name }</li>
 	</c:if>
 </c:forEach> --%>
-		<li id="conversionMenu" onclick="location.href='/conversion/manage'">변환 관리</li>
+		<li id="conversionPolicy" onclick="location.href='/conversion/policy'">변환 설정</li>
+		<li id="conversionLog" onclick="location.href='/conversion/logList'">변환 로그</li>
+		<li id="ManualConversion" onclick="location.href='/conversion/manual'">수동 변환</li>
     </ul>
 </div>
 
@@ -38,10 +40,12 @@
     } else if( currentUrl.indexOf("/statistic") >= 0) {
         targetMenu = 'statisticMenu';
     } */
-    if (currentUrl.indexOf("/conversion/manage") >= 0) {
-        targetMenu = 'conversionMenu';
+    if (currentUrl.indexOf("/conversion/policy") >= 0) {
+        targetMenu = 'conversionPolicy';
+    } else if (currentUrl.indexOf("/conversion/logList") >= 0) {
+        targetMenu = 'conversionLog';
     } else {
-        targetMenu = 'conversionMenu';
+        targetMenu = 'ManualConversion';
     }
 
     $('#'+ targetMenu +'').addClass('selected');
